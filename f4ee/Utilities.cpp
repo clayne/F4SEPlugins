@@ -109,24 +109,13 @@ std::string GetFormIdentifier(TESForm * form)
 	UInt8 modIndex = form->formID >> 24;
 	UInt32 modForm = form->formID & 0xFFFFFF;
 
-	ModInfo* modInfo = nullptr;
-	if(modIndex == 0xFE)
-	{
-		UInt16 lightIndex = (form->formID >> 12) & 0xFFF;
-		if(lightIndex < (*g_dataHandler)->modList.lightMods.count)
-			modInfo = (*g_dataHandler)->modList.lightMods[lightIndex];
-	}
-	else
-	{
-		modInfo = (*g_dataHandler)->modList.loadedMods[modIndex];
-	}
-	
+	ModInfo* modInfo = (*g_dataHandler)->modList.loadedMods[modIndex];
 	if (modInfo) {
 		sprintf_s(formName, "%s|%06X", modInfo->name, modForm);
-	}
+		}
 
 	return formName;
-}
+	}
 
 TESForm * GetFormFromIdentifier(const std::string & formIdentifier)
 {
@@ -134,23 +123,16 @@ TESForm * GetFormFromIdentifier(const std::string & formIdentifier)
 	std::string modName = formIdentifier.substr(0, pos);
 	std::string modForm = formIdentifier.substr(pos+1);
 
+	auto mod = (*g_dataHandler)->LookupLoadedModByName(modName.c_str());
+	if (!mod) // No loaded mod by this name
+		return nullptr;
+
 	UInt32 formId = 0;
 	sscanf_s(modForm.c_str(), "%X", &formId);
-
-	UInt8 modIndex = (*g_dataHandler)->GetLoadedModIndex(modName.c_str());
-	if(modIndex != 0xFF) {
-		formId |= ((UInt32)modIndex) << 24;
-	}
-	else
-	{
-		UInt16 lightModIndex = (*g_dataHandler)->GetLoadedLightModIndex(modName.c_str());
-		if(lightModIndex != 0xFFFF) {
-			formId |= 0xFE000000 | (UInt32(lightModIndex) << 12);
-		}
-	}
+	formId |= ((UInt32)mod->modIndex) << 24;
 
 	return LookupFormByID(formId);
-}
+	}
 
 TESRace * GetActorRace(Actor * actor)
 {
@@ -250,46 +232,47 @@ void VisitLeveledCharacter(TESLevCharacter * character, std::function<void(TESNP
 		}
 	}
 }
+extern "C" void analyze(const char* txt, void* p);
 
 NiNode * GetRootNode(Actor * actor, NiAVObject * object)
 {
-	NiNode * rootNode = actor->GetActorRootNode(false);
+	NiNode* rootNode = actor->GetActorRootNode(false);
+	const char* name = "Actor";
 
 	bool isFirstPerson = false;
 
 	// Only the player will have a first person skeleton
-	if(actor == (*g_player)) {
-		NiNode * node1P = actor->GetActorRootNode(true);
+	if (actor == (*g_player)) {
+		NiNode* node1P = actor->GetActorRootNode(true);
 
 		// Go up to the root and see if it is the first person one
-		NiNode * foundNode = nullptr;
-		NiNode * parent = object->m_parent;
-		while(parent)
-		{
+		NiNode* foundNode = nullptr;
+		NiNode* parent = object->m_parent;
+
+		while (parent) {
 			if (parent == node1P) {
 				foundNode = node1P;
 				break;
-			}
+				}
 			parent = parent->m_parent;
-		}
+			}
 
 		isFirstPerson = (foundNode == node1P);
-		if(isFirstPerson)
+		if (isFirstPerson)
 			rootNode = node1P;
-	}
-
+		}
 	return rootNode;
-}
+	}
 
 void ForEachMod(std::function<void(const ModInfo*)> functor)
 {
-	for(int i = 0; i < (*g_dataHandler)->modList.loadedMods.count; i++)
+	for(int i = 0; i < (*g_dataHandler)->modList.loadedModCount; i++)
 	{
 		functor((*g_dataHandler)->modList.loadedMods[i]);
 	}
 
-	for(int i = 0; i < (*g_dataHandler)->modList.lightMods.count; i++)
-	{
-		functor((*g_dataHandler)->modList.lightMods[i]);
-	}
+	//for(int i = 0; i < (*g_dataHandler)->modList.lightModCount; i++)
+	//{
+	//	functor((*g_dataHandler)->modList.lightMods[i]);
+	//}
 }

@@ -50,7 +50,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;$(SolutionDir)\..\..;$(SolutionDir)\f4se;$(SolutionDir)\jsoncpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;$(SolutionDir)\..\..;$(SolutionDir)\f4se;$(SolutionDir)\jsoncpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PLUGIN_EXAMPLE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -76,7 +76,7 @@
       </Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "$(Fallout4Path)\Data\F4SE\Plugins\$(TargetFileName)"</Command>
+      <Command>copy "$(TargetPath)" "$(Fallout4VRPath)\Data\F4SE\Plugins\$(TargetFileName)"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Installing DLL...</Message>
@@ -86,7 +86,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;$(SolutionDir)\..\..;$(SolutionDir)\f4se;$(SolutionDir)\jsoncpp;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)\..;$(SolutionDir)\..\..;$(SolutionDir)\f4se;$(SolutionDir)\jsoncpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGIN_EXAMPLE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -112,7 +112,7 @@
       </Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "$(Fallout4Path)\Data\F4SE\Plugins\$(TargetFileName)"</Command>
+      <Command>copy "$(TargetPath)" "$(Fallout4VRPath)\Data\F4SE\Plugins\$(TargetFileName)"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Installing DLL...</Message>
@@ -172,6 +172,7 @@
     <ClCompile Include="OverlayInterface.cpp" />
     <ClCompile Include="PapyrusBodyGen.cpp" />
     <ClCompile Include="PapyrusOverlays.cpp" />
+    <ClCompile Include="Patcher.cpp" />
     <ClCompile Include="ScaleformNatives.cpp" />
     <ClCompile Include="SkinInterface.cpp" />
     <ClCompile Include="StringTable.cpp" />
@@ -252,8 +253,8 @@
     <ProjectReference Include="..\..\common\common_vc14.vcxproj">
       <Project>{472e19ab-def0-42df-819b-18722e8dc822}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\f4se_common\f4se_common_vc14.vcxproj">
-      <Project>{71665cee-3ed6-4d65-b123-ee4c26f5c6e3}</Project>
+    <ProjectReference Include="..\f4se_common\f4se_common.vcxproj">
+      <Project>{20c6411c-596f-4b85-be4e-8bc91f59d8a6}</Project>
     </ProjectReference>
     <ProjectReference Include="..\jsoncpp\jsoncpp.vcxproj">
       <Project>{522ec01c-c40f-4de4-a83e-06c5b56620e6}</Project>

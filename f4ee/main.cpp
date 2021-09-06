@@ -33,6 +33,9 @@
 
 #include "f4se/NiMaterials.h"
 
+extern void do_patch();
+extern void patchSerialization();
+
 CharGenInterface g_charGenInterface;
 BodyGenInterface g_bodyGenInterface;
 BodyMorphInterface g_bodyMorphInterface;
@@ -225,9 +228,9 @@ void F4SEMessageHandler(F4SEMessagingInterface::Message* msg)
 		break;
 	case F4SEMessagingInterface::kMessage_GameLoaded:
 		{
-			if(g_bEnableModelPreprocessor)
+			if (g_bEnableModelPreprocessor) 
 				g_bodyMorphInterface.SetModelProcessor();
-
+				
 #if _TRANSFORMS
 			g_transformInterface.SetModelProcessor();
 #endif
@@ -351,7 +354,7 @@ bool F4SEPlugin_Query(const F4SEInterface * f4se, PluginInfo * info)
 		gLog.SetLogLevel((IDebugLog::LogLevel)logLevel);
 
 	if (logLevel >= 0)
-		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4\\F4SE\\f4ee.log");
+		gLog.OpenRelative(CSIDL_MYDOCUMENTS, "\\My Games\\Fallout4VR\\F4SE\\f4ee.log");
 	_DMESSAGE("f4ee - log level %d", logLevel);
 
 	g_f4seVersion = f4se->f4seVersion;
@@ -369,9 +372,9 @@ bool F4SEPlugin_Query(const F4SEInterface * f4se, PluginInfo * info)
 		_FATALERROR("loaded in editor, marking as incompatible");
 		return false;
 	}
-	else if(f4se->runtimeVersion != RUNTIME_VERSION_1_10_163)
+	else if(f4se->runtimeVersion != RUNTIME_VERSION_1_10_138)
 	{
-		UInt32 runtimeVersion = RUNTIME_VERSION_1_10_163;
+		UInt32 runtimeVersion = RUNTIME_VERSION_1_10_138;
 		char buf[512];
 		sprintf_s(buf, "LooksMenu Version Error:\nexpected game version %d.%d.%d.%d\nyour game version is %d.%d.%d.%d\nsome features may not work correctly.", 
 			GET_EXE_VERSION_MAJOR(runtimeVersion), 
@@ -383,9 +386,10 @@ bool F4SEPlugin_Query(const F4SEInterface * f4se, PluginInfo * info)
 			GET_EXE_VERSION_BUILD(f4se->runtimeVersion), 
 			GET_EXE_VERSION_SUB(f4se->runtimeVersion));
 		MessageBox(NULL, buf, "Game Version Error", MB_OK | MB_ICONEXCLAMATION);
-		_FATALERROR("unsupported runtime version %08X", f4se->runtimeVersion);
-		return false;
+		//_FATALERROR("unsupported runtime version %08X", f4se->runtimeVersion);
+		//return false;
 	}
+
 
 	// get the papyrus interface and query its version
 	g_scaleform = (F4SEScaleformInterface *)f4se->QueryInterface(kInterface_Scaleform);
@@ -420,6 +424,8 @@ bool F4SEPlugin_Query(const F4SEInterface * f4se, PluginInfo * info)
 	{
 		_WARNING("couldn't get task interface");
 	}
+
+	do_patch();
 
 	// supported runtime version
 	return true;
@@ -474,21 +480,22 @@ bool ScaleformCallback(GFxMovieView * view, GFxValue * value)
 	return true;
 }
 
-typedef UInt32 (* _InstallArmorAddon)(void * unk1, UInt32 unk2, TESForm * form);
-RelocAddr <_InstallArmorAddon> InstallArmorAddon_Original(0x001C4150);
-RelocAddr <uintptr_t> InstallArmorAddon_Start(0x001BECB0 + 0xC27);
+typedef UInt32(*_InstallArmorAddon)(void* unk1, UInt32 unk2, TESForm* form);
+RelocAddr <_InstallArmorAddon> InstallArmorAddon_Original(0x001cc340);
+RelocAddr <uintptr_t> InstallArmorAddon_Start(0x01c79df);
 
-typedef void (* _ApplyMaterialProperties)(NiAVObject * object);
-RelocAddr <_ApplyMaterialProperties> ApplyMaterialProperties(0x028201D0); // 42D562E443C0313BACEF58FC1A4508489CED355F+33A
-RelocAddr <uintptr_t> HairColorModify_Start(0x0068BFC0 + 0x24A);
+typedef void (*_ApplyMaterialProperties)(NiAVObject* object);
+RelocAddr <_ApplyMaterialProperties> ApplyMaterialProperties(0x2804860);	// 42D562E443C0313BACEF58FC1A4508489CED355F+33A
+RelocAddr <uintptr_t> HairColorModify_Start(0x0067a190 + 0x24A);
 
-RelocAddr <uintptr_t> GetHairTexturePath_Start(0x00689BB0 + 0xDED);
+RelocAddr <uintptr_t> GetHairTexturePath_Start(0x00677d90 + 0xDED);
 
-RelocPtr<UInt32> g_faceGenTextureWidth(0x0384FF30); // F5F0D2A6AFBE88D06472E751C88521770B465B79+148
-RelocPtr<UInt32> g_faceGenTextureHeight(0x0384FF34);
+RelocPtr<UInt32> g_faceGenTextureWidth(0x038ac250);							//	F5F0D2A6AFBE88D06472E751C88521770B465B79+148
+RelocPtr<UInt32> g_faceGenTextureHeight(0x038ac254);
 
-typedef void (* _InitializeSharedTarget)(BSRenderTargetManager * targetManager, UInt32 type, BSRenderTargetManager::SharedTargetInfo * targetInfo, UInt8 unk1);
-RelocAddr <_InitializeSharedTarget> InitializeSharedTarget(0x01D30E90);
+typedef void (*_InitializeSharedTarget)(BSRenderTargetManager* targetManager, UInt32 type, BSRenderTargetManager::SharedTargetInfo* targetInfo, UInt8 unk1);
+RelocAddr <_InitializeSharedTarget> InitializeSharedTarget(0x01db94b0);
+
 _InitializeSharedTarget InitializeSharedTarget_Original = nullptr;
 
 void ApplyMaterialProperties_Hook(NiAVObject * node, BGSColorForm * colorForm, BSLightingShaderMaterialBase * shaderMaterial)
@@ -510,12 +517,12 @@ void InstallArmorAddon(TESForm * form, NiAVObject * object, UInt32 slotIndex)
 {
 	Actor * actor = DYNAMIC_CAST(form, TESForm, Actor);
 	if(actor) {
-		if(g_bEnableBodyMorphs)
+		if (g_bEnableBodyMorphs)
 			g_bodyMorphInterface.ApplyMorphsToShapes(actor, object);
 
 		if(g_bEnableOverlays) {
 			NiNode * rootNode = GetRootNode(actor, object);
-			if(rootNode)
+			if (rootNode)
 				g_overlayInterface.UpdateOverlays(actor, rootNode, object, slotIndex);
 		}
 	}
@@ -539,9 +546,9 @@ void InitializeSharedTarget_Hook(BSRenderTargetManager * targetManager, UInt32 t
 {
 	switch(type)
 	{
-	case 16:
-	case 17:
 	case 18:
+	case 19:
+	case 20:
 		targetInfo->width = g_tintMaskWidth;
 		targetInfo->height = g_tintMaskHeight;
 		break;
@@ -601,7 +608,7 @@ bool F4SEPlugin_Load(const F4SEInterface * skse)
 		g_scaleform->Register("F4EE", ScaleformCallback);
 	if(g_messaging)
 		g_messaging->RegisterListener(g_pluginHandle, "F4SE", F4SEMessageHandler);
-	if (g_papyrus)
+	if (g_papyrus) 
 		g_papyrus->Register(RegisterFuncs);
 	if (g_serialization) {
 		g_serialization->SetUniqueID(g_pluginHandle, 'F4EE');
@@ -636,8 +643,8 @@ bool F4SEPlugin_Load(const F4SEInterface * skse)
 				call(ptr [rip + originLabel]);
 
 				mov(r8d, ptr[rbp+0x1C0-0x208]); // Stack var to current index of equip item loop
-				mov(rdx, r12);					// ObjectNode
-				mov(rcx, ptr[rsp+0x2A8-0x268]); // Actor - rbx - ptr[rsp+0x2A8-0x268]
+				mov(rdx, r13);					// ObjectNode
+				mov(rcx, ptr[rsp+0x2d8-0x298]); // Actor - rbx - ptr[rsp+0x2A8-0x268]
 				call(ptr [rip + funcLabel]);
 
 				jmp(ptr [rip + retnLabel]);
@@ -751,6 +758,8 @@ bool F4SEPlugin_Load(const F4SEInterface * skse)
 		g_branchTrampoline.Write5Branch(InitializeSharedTarget.GetUIntPtr(), (uintptr_t)InitializeSharedTarget_Hook);
 	}
 	
+	patchSerialization();				// Patch the F4SEVR dll to handle otherwise unrecognized F4SE data
+
 	return true;
 }
 
