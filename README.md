@@ -1,3 +1,5 @@
+# F4EE ported to Fallout 4 VR
+
 # F4SEPlugins
 
 Fallout 4 Script Extender:
